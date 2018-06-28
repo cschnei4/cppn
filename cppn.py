@@ -127,23 +127,30 @@ class CPPN:
 		self.update_conns()
 		self.update_layers()
 
-	def add_conn(self, conn):
+	def add_conn(self, start, end, conn_num):
+		conn = Connection(conn_num, start, end)
 		self.conns.append(conn)
 		self.get_node(conn.start_node).out_conns.append(conn)
 		self.update()
+		return conn
 
 	def add_node(self, before, after, node_num, conn_num):
+		if before == after:
+			return False
 		before_node = self.get_node(before)
+		after_node = self.get_node(after)
+		if after_node in self.in_nodes or before_node in self.out_nodes:
+			return False
 		for conn in before_node.out_conns:
 			if conn.end_node == after:
-				conn.active = False
-		before_conn = Connection(conn_num, before, node_num)
-		after_conn = Connection(conn_num + 1, node_num, after)
+				conn.active = 0
+		self.add_conn(before, node_num, conn_num)
+		after_conn = self.add_conn(node_num, after, conn_num + 1)
 		new_node = Node(node_num, out_conns=[after_conn])
-		self.conns.extend([before_conn, after_conn])
 		self.hidden_nodes.append(new_node)
 		self.nodes.append(new_node)
 		self.update()
+		return True
 
 	def activate_node(self, node):
 		signal = node.activate()
@@ -160,6 +167,18 @@ class CPPN:
 				self.activate_node(node)
 		return tuple([node.activate() * scale for node in self.out_nodes])
 
+	def get_point_radial(self, x, y, scale):
+		self.in_nodes[0].receive(x)
+		self.in_nodes[1].receive(y)
+		self.in_nodes[2].receive(math.sqrt(pow(x, 2) + pow(y, 2)))
+		self.activate_node(self.in_nodes[0])
+		self.activate_node(self.in_nodes[1])
+		self.activate_node(self.in_nodes[2])
+		for layer in self.layers:
+			for node in layer:
+				self.activate_node(node)
+		return tuple([node.activate() * scale for node in self.out_nodes])
+
 	def __repr__(self):
 		node_str = ""
 		for node in self.nodes:
@@ -168,7 +187,7 @@ class CPPN:
 		for conn in self.conns:
 			conn_str += str(conn) + ":"
 		return node_str[:-1] + "|" + conn_str[:-1]
-		
+	
 def build_basic_cppn():
 	in_nodes = [InputNode(i) for i in [1, 2]]
 	out_nodes = [OutputNode(i) for i in [3, 4, 5]]
@@ -183,11 +202,37 @@ def build_basic_cppn():
 	conns = [c13, c14, c15, c23, c24, c25]
 
 	return CPPN(in_nodes, out_nodes, conns=conns)
+	
+def build_radial_cppn():
+	in_nodes = [InputNode(i) for i in [1, 2, 3]]
+	out_nodes = [OutputNode(i) for i in [4, 5, 6]]
+	c14 = Connection(1, 1, 4)
+	c15 = Connection(2, 1, 5)
+	c16 = Connection(3, 1, 6)
+
+	c24 = Connection(4, 2, 4)
+	c25 = Connection(5, 2, 5)
+	c26 = Connection(6, 2, 6)
+
+	c34 = Connection(7, 3, 4)
+	c35 = Connection(8, 3, 5)
+	c36 = Connection(9, 3, 6)
+
+	conns = [c14, c15, c16, c24, c25, c26, c34, c35, c36]
+
+	return CPPN(in_nodes, out_nodes, conns=conns)
 
 def make_image(size_x, size_y, net, filename):
 	x_r = [(i * 2 / (size_x - 1)) - 1 for i in range(size_x)]
 	y_r = [(i * 2 / (size_y - 1)) - 1 for i in range(size_y)]
 	img = np.array([[net.get_point(x, y, 255) for x in x_r] for y in y_r])
+	cv2.imwrite(filename, img)
+	return img
+
+def make_radial_image(size_x, size_y, net, filename):
+	x_r = [(i * 2 / (size_x - 1)) - 1 for i in range(size_x)]
+	y_r = [(i * 2 / (size_y - 1)) - 1 for i in range(size_y)]
+	img = np.array([[net.get_point_radial(x, y, 255) for x in x_r] for y in y_r])
 	cv2.imwrite(filename, img)
 	return img
 
