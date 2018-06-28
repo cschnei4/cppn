@@ -101,7 +101,7 @@ class Population:
 	def mutate(self):
 		for indiv in self.next_gen:
 			if random.random() < .8:
-				for conn in self.population[indiv].conns:
+				for conn in indiv.conns:
 					if random.random() < .9:
 						conn.weight += np.random.normal(scale=.25)
 						if conn.weight < -1:
@@ -109,21 +109,21 @@ class Population:
 						elif conn.weight > 1:
 							conn.weight = 1
 			if random.random() < .075:
-				nodes = [node.i_num for node in self.population[indiv]]
+				nodes = [node.i_num for node in indiv.nodes]
 				success = False
 				while not success:
 					before = nodes[random.randint(0, len(nodes) - 1)]
 					after = nodes[random.randint(0, len(nodes) - 1)]
-					success = self.population[indiv].add_node(before, after, self.node_num, self.conn_num)
+					success = indiv.add_node(before, after, self.node_num, self.conn_num)
 				self.node_num += 1
 				self.conn_num += 2
 			elif random.random() < .1:
-				nodes = [node.i_num for node in self.population[indiv]]
+				nodes = [node.i_num for node in indiv.nodes]
 				success = False
 				while not success:
 					before = nodes[random.randint(0, len(nodes) - 1)]
 					after = nodes[random.randint(0, len(nodes) - 1)]
-					success = self.population[indiv].add_conn(before, after, self.conn_num)
+					success = indiv.add_conn(before, after, self.conn_num)
 				self.conn_num += 1
 
 	def breed_winners(self):
@@ -134,8 +134,9 @@ class Population:
 				mate = self.winners[random.randint(0, len(self.winners) - 1)]
 			new_indiv = cppn.build_cppn_from_str(self.crossover(indiv, mate))
 			print(type(new_indiv))
+			print(type(self.population[indiv]))
 			self.next_gen.append(new_indiv)
-			self.next_gen.append(indiv)
+			self.next_gen.append(self.population[indiv])
 		self.mutate()
 
 	def new_gen(self):
