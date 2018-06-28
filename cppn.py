@@ -35,7 +35,7 @@ class Connection:
 		return 0
 
 	def __repr__(self):
-		return ';'.join([str(self.i_num), str(self.start_node), str(self.end_node), str(self.weight)])
+		return ';'.join([str(self.i_num), str(self.start_node), str(self.end_node), str(self.weight), str(self.active)])
 
 class Node:
 
@@ -61,7 +61,7 @@ class Node:
 		return to_ret
 
 	def __repr__(self):
-		return ';'.join([str(self.i_num), self.func.__name__, str([conn.i_num for conn in self.out_conns]), str(self.layer)])
+		return ';'.join([str(self.i_num), self.func.__name__, str(self.layer)])
 
 class InputNode(Node):
 
@@ -130,6 +130,7 @@ class CPPN:
 	def add_conn(self, conn):
 		self.conns.append(conn)
 		self.get_node(conn.start_node).out_conns.append(conn)
+		self.update()
 
 	def add_node(self, before, after, node_num, conn_num):
 		before_node = self.get_node(before)
@@ -189,3 +190,20 @@ def make_image(size_x, size_y, net, filename):
 	img = np.array([[net.get_point(x, y, 255) for x in x_r] for y in y_r])
 	cv2.imwrite(filename, img)
 	return img
+
+def build_cppn_from_str(string):
+	strs = string.split('|')
+	nodes = strs[0].split(':')
+	conns = strs[1].split(':')
+	ns = []
+	for node in nodes:
+		node_parts = node.split(';')
+		ns.append(Node(eval(node_parts[0]), func=eval(node_parts[1]), layer=eval(node_parts[2])))
+	ins = ns[:2]
+	outs = ns[2:5]
+	hids = ns[5:]
+	cs = []
+	for conn in conns:
+		conn_parts = conn.split(';')
+		cs.append(Connection(eval(conn_parts[0]), eval(conn_parts[1]), eval(conn_parts[2]), weight=eval(conn_parts[3]), active=eval(conn_parts[4])))
+	return CPPN(ins, outs, conns=cs, hidden_nodes=hids)
