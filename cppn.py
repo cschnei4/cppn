@@ -128,6 +128,12 @@ class CPPN:
 		self.update_layers()
 
 	def add_conn(self, start, end, conn_num):
+		if start == end:
+			return False
+		before_node = self.get_node(start)
+		after_node = self.get_node(end)
+		if after_node in self.in_nodes or before_node in self.out_nodes:
+			return False
 		conn = Connection(conn_num, start, end)
 		self.conns.append(conn)
 		self.get_node(conn.start_node).out_conns.append(conn)
