@@ -150,11 +150,11 @@ class CPPN:
 		for conn in before_node.out_conns:
 			if conn.end_node == after:
 				conn.active = 0
-		self.add_conn(before, node_num, conn_num)
-		after_conn = self.add_conn(node_num, after, conn_num + 1)
-		new_node = Node(node_num, out_conns=[after_conn])
+		new_node = Node(node_num)
 		self.hidden_nodes.append(new_node)
 		self.nodes.append(new_node)
+		self.add_conn(before, node_num, conn_num)
+		after_conn = self.add_conn(node_num, after, conn_num + 1)
 		self.update()
 		return True
 
@@ -247,12 +247,19 @@ def build_cppn_from_str(string):
 	nodes = strs[0].split(':')
 	conns = strs[1].split(':')
 	ns = []
+	ins = []
+	outs = []
+	hids = []
 	for node in nodes:
 		node_parts = node.split(';')
-		ns.append(Node(eval(node_parts[0]), func=eval(node_parts[1]), layer=eval(node_parts[2])))
-	ins = ns[:2]
-	outs = ns[2:5]
-	hids = ns[5:]
+		n = Node(eval(node_parts[0]), func=eval(node_parts[1]), layer=eval(node_parts[2]))
+		ns.append(n)
+		if n.i_num == 1 or n.i_num == 2 or n.i_num == 3:
+			ins.append(n)
+		elif n.i_num == 4 or n.i_num == 5 or n.i_num == 6:
+			outs.append(n)
+		else:
+			hids.append(n)
 	cs = []
 	for conn in conns:
 		conn_parts = conn.split(';')

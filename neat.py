@@ -3,6 +3,7 @@ import numpy as np
 from label_image import classify
 import cppn
 from subprocess import call
+import os
 
 class Population:
 
@@ -133,8 +134,6 @@ class Population:
 			while mate != indiv:
 				mate = self.winners[random.randint(0, len(self.winners) - 1)]
 			new_indiv = cppn.build_cppn_from_str(self.crossover(indiv, mate))
-			print(type(new_indiv))
-			print(type(self.population[indiv]))
 			self.next_gen.append(new_indiv)
 			self.next_gen.append(self.population[indiv])
 		self.mutate()
@@ -142,11 +141,12 @@ class Population:
 	def new_gen(self):
 		best, best_fit = self.get_best_indiv()
 		call(['mv', best, 'good_bois/' + best.split('/')[-1]])
-		call(['rm', 'population/*.png'])
+		for filename in os.listdir("population"):
+			call(['rm', 'population/' + filename])
 		self.generation += 1
 		self.population = {}
-		for i in range(1, self.size + 1):
-			self.population["population/" + str(self.generation) + "_" + str(i) + ".png"] = self.next_gen[i]
+		for i in range(0, self.size):
+			self.population["population/" + str(self.generation) + "_" + str(i + 1) + ".png"] = self.next_gen[i]
 		return best, best_fit
 
 def evolve(size, goal):
@@ -155,7 +155,7 @@ def evolve(size, goal):
 	best = ""
 	best_fit = 0
 
-	while best_fit < .9:
+	while best_fit < .99:
 
 		p.draw_population()
 
@@ -166,4 +166,6 @@ def evolve(size, goal):
 		p.breed_winners()
 
 		best, best_fit = p.new_gen()
+	
+	print(best + ": " + str(best_fit))
 
